@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <title>Client</title>
+    </head>
+    <script src="server.js"></script>
+    <body>
+        <h1>Hello! Welcome to the stream from a seperate server</h1>
+        <img id="image" src="">
+        <button class="button" id="cam_save" onclick="saveFunc()" style="background-color: #008cba;">Save to Image</button>
+        <!-- <script data-main="your-script.js" src="require.js"></script> -->
+        <script>
+            const img = document.querySelector('img');
+            const WS_URL = 'ws:///192.168.1.187:8888';
+            const ws = new WebSocket(WS_URL);
+            let urlObject;
+            var ev
+            , image = document.getElementById('image')
+            , button_save = document.getElementById('saveas');
+            
+            ws.onopen = () => console.log(`Connected to ${WS_URL}`);
+            ws.onmessage = message => {
+                const arrayBuffer = message.data;
+                if(urlObject){
+                    URL.revokeObjectURL(urlObject);
+                }
+                urlObject = URL.createObjectURL(new Blob([arrayBuffer]));
+                console.log(urlObject);
+                img.src = urlObject;
+                //a.href = urlObject;
+            }
+
+            function forceDownload(url, fileName){
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", url, true);
+                xhr.responseType = "blob";
+                xhr.onload = function (){
+                    var urlCreator = window.URL || window.webkitURL;
+                    var imageUrl = urlCreator.createObjectURL(this.response);
+                    var tag = document.createElement("a");
+                    tag.href = imageUrl;
+                    tag.download = fileName;
+                    document.body.appendChild(tag);
+                    tag.click();
+                    document.body.removeChild(tag);
+                };
+                xhr.send();
+            }
+
+            function saveFunc(){
+                var blobUrl = img.src;
+                if(blobUrl.indexOf("blob") == -1){
+                    return;
+                }
+                var fileName = "test_image.jpeg";
+                forceDownload(blobUrl, fileName);
+            }
+        </script>
+        
+    </body>
+</html>
