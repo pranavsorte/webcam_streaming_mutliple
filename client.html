@@ -1,39 +1,64 @@
 <html>
-    <head>
-        <title>Client</title>
-    </head>
-    <script src="server.js"></script>
-    <body>
-        <h1>Hello! Welcome to the stream from a seperate server</h1>
-        <img id="image" src="">
-        <button class="button" id="cam_save" onclick="saveFunc()" style="background-color: #008cba;">Save to Image</button>
-        <!-- <script data-main="your-script.js" src="require.js"></script> -->
-        <script>
-            const img = document.querySelector('img');
-            const WS_URL = 'ws:///192.168.1.187:8888';
-            const ws = new WebSocket(WS_URL);
-            let urlObject;
-            var ev
-            , image = document.getElementById('image')
-            , button_save = document.getElementById('saveas');
-            
-            ws.onopen = () => console.log(`Connected to ${WS_URL}`);
-            ws.onmessage = message => {
-                const arrayBuffer = message.data;
-                if(urlObject){
-                    URL.revokeObjectURL(urlObject);
-                }
-                urlObject = URL.createObjectURL(new Blob([arrayBuffer]));
-                console.log(urlObject);
-                img.src = urlObject;
-                //a.href = urlObject;
-            }
 
-            function forceDownload(url, fileName){
+<head>
+    <link rel="stylesheet" href="/styles.css">
+    <title>Web browser Client</title>
+</head>
+
+<body>
+    <h1>MULTIPLE ESP32CAM DASHBOARD</h1>
+    <div class="cards">
+        <div class="card">
+            <img id="ESP32-1" src="" />
+            <h2><b>CAM 1</b></h2>
+            <br>
+            <button class="button" id="cam_save" onclick="saveFunc_cam1()" style="background-color: #008cba;">Save to Image</button>
+        </div>
+
+        <div class="card">
+            <img id="ESP32-2" src="" />
+            <h2><b>CAM 2</b></h2>
+            <br>
+            <button class="button" id="cam_save" onclick="saveFunc_cam2()" style="background-color: #008cba;">Save to Image</button>
+        </div>
+    </div>
+
+    <script>
+        const img_1 = document.getElementById("ESP32-1");
+        const img_2 = document.getElementById("ESP32-2");
+        var imageFrame;
+
+        const WS_URL = 'ws:///192.168.1.154:8888';
+        const ws = new WebSocket(WS_URL);
+        let urlObject;
+        ws.onopen = () => {
+            console.log(`Connected to ${WS_URL}`);
+            ws.send("WEB_CLIENT");
+        };
+
+        ws.onmessage = async (message) => {
+            const arrayBuffer = message.data;
+            if (urlObject) {
+                URL.revokeObjectURL(urlObject);
+            }
+            var blobObj = new Blob([arrayBuffer]);
+            const buf = await blobObj.arrayBuffer();
+            var uint8 = new Uint8Array(buf.slice(12, 13));
+            var currentCam = uint8[0];
+            console.log("current Cam: ", currentCam);
+
+            imageFrame = (currentCam == 1) ? img_1 : img_2;
+
+
+            urlObject = URL.createObjectURL(blobObj);
+            imageFrame.src = urlObject;
+        }
+
+        function forceDownload(url, fileName) {
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", url, true);
                 xhr.responseType = "blob";
-                xhr.onload = function (){
+                xhr.onload = function () {
                     var urlCreator = window.URL || window.webkitURL;
                     var imageUrl = urlCreator.createObjectURL(this.response);
                     var tag = document.createElement("a");
@@ -46,15 +71,24 @@
                 xhr.send();
             }
 
-            function saveFunc(){
-                var blobUrl = img.src;
-                if(blobUrl.indexOf("blob") == -1){
+            function saveFunc_cam1() {
+                var blobUrl = imageFrame.src;
+                if (blobUrl.indexOf("blob") == -1) {
                     return;
                 }
                 var fileName = "test_image.jpeg";
                 forceDownload(blobUrl, fileName);
             }
-        </script>
-        
-    </body>
+
+            function saveFunc_cam2() {
+                    var blobUrl = imageFrame.src;
+                    if (blobUrl.indexOf("blob") == -1) {
+                        return;
+                    }
+                    var fileName = "test_image.jpeg";
+                    forceDownload(blobUrl, fileName);
+                }
+    </script>
+</body>
+
 </html>
