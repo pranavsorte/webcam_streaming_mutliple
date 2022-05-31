@@ -28,7 +28,7 @@
         const img_2 = document.getElementById("ESP32-2");
         var imageFrame;
 
-        const WS_URL = 'ws:///192.168.1.154:8888';
+        const WS_URL = 'ws:///192.168.0.111:8888'; //REplace this with your own local IPv4 address
         const ws = new WebSocket(WS_URL);
         let urlObject;
         ws.onopen = () => {
